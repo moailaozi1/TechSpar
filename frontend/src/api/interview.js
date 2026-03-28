@@ -21,6 +21,42 @@ async function authFetch(url, options = {}) {
   return res;
 }
 
+async function readErrorMessage(res) {
+  try {
+    const data = await res.json();
+    if (typeof data?.detail === "string") return data.detail;
+  } catch {}
+  return res.text();
+}
+
+// ── Settings ──
+
+export async function getLlmSettings() {
+  const res = await authFetch(`${API_BASE}/settings/llm`);
+  if (!res.ok) throw new Error(await readErrorMessage(res));
+  return res.json();
+}
+
+export async function updateLlmSettings(payload) {
+  const res = await authFetch(`${API_BASE}/settings/llm`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(await readErrorMessage(res));
+  return res.json();
+}
+
+export async function validateLlmSettings(payload) {
+  const res = await authFetch(`${API_BASE}/settings/llm/validate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(await readErrorMessage(res));
+  return res.json();
+}
+
 // ── Speech-to-text ──
 
 export async function transcribeAudio(audioBlob) {

@@ -96,3 +96,29 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+
+class LlmSettingsResponse(BaseModel):
+    api_base: str = ""
+    model: str = ""
+    has_api_key: bool = False
+    masked_api_key: str | None = None
+
+
+class UpdateLlmSettingsRequest(BaseModel):
+    api_base: str = ""
+    api_key: str = ""
+    model: str = ""
+    replace_api_key: bool = False
+
+
+class ValidateLlmSettingsRequest(BaseModel):
+    api_base: str = ""
+    api_key: str = ""
+    model: str = ""
+
+
+class ValidateLlmSettingsResponse(BaseModel):
+    ok: bool
+    message: str
+    resolved_model: str | None = None

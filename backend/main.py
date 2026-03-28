@@ -13,6 +13,8 @@ from backend.models import (
     StartInterviewRequest, ChatRequest, EndDrillRequest,
     JobPrepPreviewRequest, JobPrepStartRequest,
     RecordingAnalyzeRequest, RegisterRequest, LoginRequest,
+    LlmSettingsResponse, UpdateLlmSettingsRequest,
+    ValidateLlmSettingsRequest, ValidateLlmSettingsResponse,
     InterviewMode, InterviewPhase,
 )
 from backend.graphs.job_prep import (
@@ -38,6 +40,13 @@ from backend.auth import (
     init_users_table, ensure_default_user,
     create_user, authenticate_user, create_token, get_current_user,
 )
+from backend.user_settings import (
+    init_user_llm_settings_table,
+    get_user_llm_settings,
+    get_user_llm_settings_record,
+    save_user_llm_settings,
+)
+from backend.llm_validation import validate_openai_compatible_config, LlmValidationError
 
 app = FastAPI(title="TechSpar", version="0.2.0")
 
@@ -80,6 +89,7 @@ def preload_models():
     # Init tables + default user
     init_memory_table()
     init_users_table()
+    init_user_llm_settings_table()
     ensure_default_user()
     logger.info("Database tables initialized.")
 
@@ -111,6 +121,44 @@ def login(req: LoginRequest):
 @router.get("/")
 def root():
     return {"service": "TechSpar", "version": "0.2.0"}
+
+
+@router.get("/settings/llm", response_model=LlmSettingsResponse)
+def get_llm_settings(user_id: str = Depends(get_current_user)):
+    return get_user_llm_settings(user_id)
+
+
+@router.put("/settings/llm")
+def update_llm_settings(req: UpdateLlmSettingsRequest, user_id: str = Depends(get_current_user)):
+    saved = save_user_llm_settings(
+        user_id,
+        api_base=req.api_base.strip(),
+        model=req.model.strip(),
+        api_key=req.api_key.strip(),
+        replace_api_key=req.replace_api_key,
+    )
+    return {"ok": True, **saved}
+
+
+@router.post("/settings/llm/validate", response_model=ValidateLlmSettingsResponse)
+def validate_llm_settings(req: ValidateLlmSettingsRequest, user_id: str = Depends(get_current_user)):
+    api_base = req.api_base.strip()
+    model = req.model.strip()
+    api_key = req.api_key.strip()
+
+    if not api_key:
+        current = get_user_llm_settings_record(user_id)
+        api_key = (current or {}).get("api_key", "").strip()
+
+    try:
+        result = validate_openai_compatible_config(api_base, api_key, model)
+        return ValidateLlmSettingsResponse(
+            ok=True,
+            message=result["message"],
+            resolved_model=result.get("resolved_model"),
+        )
+    except LlmValidationError as exc:
+        raise HTTPException(400, str(exc))
 
 
 # ── Resume ──

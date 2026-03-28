@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Home, User, BookOpen, GitFork, Clock, Mic, BriefcaseBusiness,
-  Sun, Moon, LogOut, Menu, X, ChevronLeft, ChevronRight,
+  Sun, Moon, LogOut, Menu, X, ChevronLeft, ChevronRight, Settings,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -103,6 +103,23 @@ export default function Sidebar() {
         <Separator />
 
         <div className={cn("py-2 space-y-0.5", collapsed ? "px-2" : "px-3")}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => navigate("/settings")}
+                className={cn(
+                  "flex items-center gap-2.5 w-full py-2 rounded-lg text-[13px] text-dim hover:text-text hover:bg-hover transition-all",
+                  isActive("/settings") && "bg-primary/12 text-primary font-medium",
+                  collapsed && "justify-center"
+                )}
+              >
+                <Settings size={18} className={cn(isActive("/settings") && "text-primary")} />
+                {!collapsed && "设置"}
+              </button>
+            </TooltipTrigger>
+            {collapsed && <TooltipContent side="right" sideOffset={8}>设置</TooltipContent>}
+          </Tooltip>
+
           <Tooltip>
             <TooltipTrigger asChild>
               <button
