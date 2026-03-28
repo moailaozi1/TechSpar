@@ -623,7 +623,7 @@ async def llm_update_profile(
             new_strong="\n".join(new_strong_lines) or "暂无",
         )
 
-        llm = get_langchain_llm()
+        llm = get_langchain_llm(user_id=user_id)
         response = llm.invoke([
             SystemMessage(content="你是画像更新引擎。只返回 JSON。"),
             HumanMessage(content=prompt),
@@ -672,7 +672,7 @@ async def update_profile_after_interview(
 ) -> dict:
     """Mem0-style two-stage pipeline: Extract → Update."""
     profile = _load_profile(user_id)
-    llm = get_langchain_llm()
+    llm = get_langchain_llm(user_id=user_id)
 
     # ── Stage 1: Extract insights ──
     transcript_lines = []

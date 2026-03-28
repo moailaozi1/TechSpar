@@ -257,7 +257,7 @@ def _analyze_recording_background(session_id: str, req_transcript: str, req_reco
         )
         from langchain_core.messages import SystemMessage
 
-        llm = get_langchain_llm()
+        llm = get_langchain_llm(user_id=user_id)
 
         if req_recording_mode == "dual":
             # Structure transcript into Q&A
@@ -517,7 +517,7 @@ def _generate_retrospective_background(task_id: str, topic: str, user_id: str):
             mastery_info=mastery_text,
         )
 
-        llm = get_langchain_llm()
+        llm = get_langchain_llm(user_id=user_id)
         response = llm.invoke([
             SystemMessage(content="你是面试教练。用 markdown 生成回顾报告。"),
             HumanMessage(content=prompt),
@@ -766,6 +766,7 @@ def _generate_review_background(
             weak_points=weak_points,
             topic=topic_name,
             eval_history=eval_history,
+            user_id=user_id,
         )
 
         extraction = asyncio.run(update_profile_after_interview(
@@ -1191,7 +1192,7 @@ async def generate_core_knowledge(topic: str, user_id: str = Depends(get_current
 
     topic_name = topics[topic].get("name", topic)
 
-    llm = get_langchain_llm()
+    llm = get_langchain_llm(user_id=user_id)
     resp = llm.invoke([
         SystemMessage(content="你是一位资深技术面试官，擅长梳理技术领域的核心知识体系。"),
         HumanMessage(content=(
@@ -1277,7 +1278,7 @@ async def generate_reference_answer(body: dict, user_id: str = Depends(get_curre
         knowledge_context=knowledge_context,
     )
 
-    llm = get_langchain_llm()
+    llm = get_langchain_llm(user_id=user_id)
     resp = llm.invoke([HumanMessage(content=prompt)])
     return {"reference_answer": resp.content.strip()}
 

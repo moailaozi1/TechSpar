@@ -2,19 +2,36 @@ from langchain_openai import ChatOpenAI
 from llama_index.llms.openai_like import OpenAILike
 
 from backend.config import settings
+from backend.user_settings import get_effective_llm_config
 
 _embedding_instance = None
 _llama_llm_instance = None
 
 
-def get_langchain_llm():
-    """LangChain ChatModel for LangGraph nodes (via OpenAI-compatible proxy)."""
+def build_langchain_llm(llm_config: dict):
     return ChatOpenAI(
-        model=settings.model,
-        api_key=settings.api_key,
-        base_url=settings.api_base,
-        temperature=settings.temperature,
+        model=llm_config["model"],
+        api_key=llm_config["api_key"],
+        base_url=llm_config["api_base"],
+        temperature=llm_config.get("temperature", settings.temperature),
     )
+
+
+def get_langchain_llm(user_id: str | None = None, llm_config: dict | None = None):
+    """LangChain ChatModel for training flows.
+
+    Priority: explicit llm_config > user effective config > global settings.
+    """
+    if llm_config is not None:
+        return build_langchain_llm(llm_config)
+    if user_id is not None:
+        return build_langchain_llm(get_effective_llm_config(user_id))
+    return build_langchain_llm({
+        "model": settings.model,
+        "api_key": settings.api_key,
+        "api_base": settings.api_base,
+        "temperature": settings.temperature,
+    })
 
 
 def get_llama_llm():

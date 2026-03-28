@@ -61,7 +61,7 @@ def _make_init_interview(user_id: str):
             user_profile=get_profile_summary(user_id),
         )
 
-        llm = get_langchain_llm()
+        llm = get_langchain_llm(user_id=user_id)
         response = llm.invoke([
             SystemMessage(content=system_prompt),
             HumanMessage(content="面试开始，请开场并让候选人做自我介绍。"),
@@ -93,7 +93,7 @@ def _make_interviewer_ask(user_id: str):
             user_profile=get_profile_summary(user_id),
         )
 
-        llm = get_langchain_llm()
+        llm = get_langchain_llm(user_id=user_id)
         messages = [SystemMessage(content=system_prompt)] + list(state.get("messages", []))
         response = llm.invoke(messages)
 

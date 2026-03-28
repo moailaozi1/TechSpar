@@ -4,6 +4,25 @@ from datetime import datetime
 from backend.config import settings
 
 
+def build_effective_llm_config(user_id: str) -> dict:
+    record = get_user_llm_settings_record(user_id) or {}
+    api_base = (record.get("api_base") or settings.api_base or "").strip()
+    api_key = (record.get("api_key") or settings.api_key or "").strip()
+    model = (record.get("model") or settings.model or "").strip()
+    return {
+        "api_base": api_base,
+        "api_key": api_key,
+        "model": model,
+        "temperature": settings.temperature,
+    }
+
+
+def get_effective_llm_config(user_id: str) -> dict:
+    return build_effective_llm_config(user_id)
+
+
+
+
 TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS user_llm_settings (
     user_id TEXT PRIMARY KEY,
