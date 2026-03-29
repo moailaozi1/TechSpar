@@ -40,13 +40,9 @@ from backend.auth import (
     init_users_table, ensure_default_user,
     create_user, authenticate_user, create_token, get_current_user,
 )
-from backend.user_settings import (
-    init_user_llm_settings_table,
-    get_user_llm_settings,
-    get_user_llm_settings_record,
-    save_user_llm_settings,
-)
+from backend.env_settings import read_global_llm_settings, write_global_llm_settings
 from backend.llm_validation import validate_openai_compatible_config, LlmValidationError
+from backend.llm_provider import reset_llama_llm
 
 app = FastAPI(title="TechSpar", version="0.2.0")
 
@@ -89,7 +85,6 @@ def preload_models():
     # Init tables + default user
     init_memory_table()
     init_users_table()
-    init_user_llm_settings_table()
     ensure_default_user()
     logger.info("Database tables initialized.")
 
@@ -125,30 +120,33 @@ def root():
 
 @router.get("/settings/llm", response_model=LlmSettingsResponse)
 def get_llm_settings(user_id: str = Depends(get_current_user)):
-    return get_user_llm_settings(user_id)
+    del user_id
+    return read_global_llm_settings()
 
 
 @router.put("/settings/llm")
 def update_llm_settings(req: UpdateLlmSettingsRequest, user_id: str = Depends(get_current_user)):
-    saved = save_user_llm_settings(
-        user_id,
+    del user_id
+    saved = write_global_llm_settings(
         api_base=req.api_base.strip(),
         model=req.model.strip(),
         api_key=req.api_key.strip(),
         replace_api_key=req.replace_api_key,
     )
+    settings.api_base = req.api_base.strip()
+    settings.model = req.model.strip()
+    if req.replace_api_key:
+        settings.api_key = req.api_key.strip()
+    reset_llama_llm()
     return {"ok": True, **saved}
 
 
 @router.post("/settings/llm/validate", response_model=ValidateLlmSettingsResponse)
 def validate_llm_settings(req: ValidateLlmSettingsRequest, user_id: str = Depends(get_current_user)):
+    del user_id
     api_base = req.api_base.strip()
     model = req.model.strip()
-    api_key = req.api_key.strip()
-
-    if not api_key:
-        current = get_user_llm_settings_record(user_id)
-        api_key = (current or {}).get("api_key", "").strip()
+    api_key = req.api_key.strip() or (settings.api_key or "").strip()
 
     try:
         result = validate_openai_compatible_config(api_base, api_key, model)
@@ -257,7 +255,7 @@ def _analyze_recording_background(session_id: str, req_transcript: str, req_reco
         )
         from langchain_core.messages import SystemMessage
 
-        llm = get_langchain_llm(user_id=user_id)
+        llm = get_langchain_llm()
 
         if req_recording_mode == "dual":
             # Structure transcript into Q&A
@@ -517,7 +515,7 @@ def _generate_retrospective_background(task_id: str, topic: str, user_id: str):
             mastery_info=mastery_text,
         )
 
-        llm = get_langchain_llm(user_id=user_id)
+        llm = get_langchain_llm()
         response = llm.invoke([
             SystemMessage(content="你是面试教练。用 markdown 生成回顾报告。"),
             HumanMessage(content=prompt),
@@ -1192,7 +1190,7 @@ async def generate_core_knowledge(topic: str, user_id: str = Depends(get_current
 
     topic_name = topics[topic].get("name", topic)
 
-    llm = get_langchain_llm(user_id=user_id)
+    llm = get_langchain_llm()
     resp = llm.invoke([
         SystemMessage(content="你是一位资深技术面试官，擅长梳理技术领域的核心知识体系。"),
         HumanMessage(content=(
@@ -1278,7 +1276,7 @@ async def generate_reference_answer(body: dict, user_id: str = Depends(get_curre
         knowledge_context=knowledge_context,
     )
 
-    llm = get_langchain_llm(user_id=user_id)
+    llm = get_langchain_llm()
     resp = llm.invoke([HumanMessage(content=prompt)])
     return {"reference_answer": resp.content.strip()}
 

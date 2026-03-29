@@ -2,7 +2,6 @@ from langchain_openai import ChatOpenAI
 from llama_index.llms.openai_like import OpenAILike
 
 from backend.config import settings
-from backend.user_settings import get_effective_llm_config
 
 _embedding_instance = None
 _llama_llm_instance = None
@@ -18,20 +17,24 @@ def build_langchain_llm(llm_config: dict):
 
 
 def get_langchain_llm(user_id: str | None = None, llm_config: dict | None = None):
-    """LangChain ChatModel for training flows.
+    """LangChain ChatModel for runtime flows.
 
-    Priority: explicit llm_config > user effective config > global settings.
+    user_id is accepted for backward compatibility but global settings are the source of truth.
     """
+    del user_id
     if llm_config is not None:
         return build_langchain_llm(llm_config)
-    if user_id is not None:
-        return build_langchain_llm(get_effective_llm_config(user_id))
     return build_langchain_llm({
         "model": settings.model,
         "api_key": settings.api_key,
         "api_base": settings.api_base,
         "temperature": settings.temperature,
     })
+
+
+def reset_llama_llm():
+    global _llama_llm_instance
+    _llama_llm_instance = None
 
 
 def get_llama_llm():

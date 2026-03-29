@@ -60,7 +60,7 @@ def generate_review(
         extra_context=extra,
     )
 
-    llm = get_langchain_llm(user_id=user_id)
+    llm = get_langchain_llm()
     response = llm.invoke([
         SystemMessage(content=prompt),
         HumanMessage(content="请生成复盘报告。"),

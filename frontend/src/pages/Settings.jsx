@@ -26,7 +26,7 @@ function buildValidationTone(status) {
 export default function Settings() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [persistedMeta, setPersistedMeta] = useState({ hasApiKey: false, maskedApiKey: null });
-  const [validation, setValidation] = useState({ status: "idle", message: "保存后可检查连通性，不会影响正在进行中的训练。", checkedAt: null, resolvedModel: null });
+  const [validation, setValidation] = useState({ status: "idle", message: "保存后可检查连通性，新的全局配置会用于后续请求。", checkedAt: null, resolvedModel: null });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -85,7 +85,7 @@ export default function Settings() {
       setDirty(false);
       setValidation({
         status: "idle",
-        message: "配置已保存，仅对你后续新建的会话生效。",
+        message: "配置已保存，新的全局配置会用于后续请求。",
         checkedAt: null,
         resolvedModel: null,
       });
@@ -132,7 +132,7 @@ export default function Settings() {
                   <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-dim/80">模型连接设置</div>
                   <div className="mt-2 text-2xl font-display font-bold tracking-tight md:text-3xl">LLM 设置</div>
                   <div className="mt-1.5 max-w-3xl text-sm leading-6 text-dim">
-                    保存你的大模型连接配置，并在提交前做一次在线检测。该配置仅影响你后续新建的会话，不会影响正在进行中的训练或复盘。
+                    保存当前系统的全局大模型连接配置，并在提交前做一次在线检测。保存后，后续请求会使用新的全局配置。
                   </div>
                 </div>
 
@@ -151,14 +151,14 @@ export default function Settings() {
                     <div className="flex items-center justify-between gap-3">
                       <Label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-dim/80">API Key</Label>
                       {persistedMeta.hasApiKey && (
-                        <span className="text-xs text-dim">已配置 {persistedMeta.maskedApiKey || "密钥"}</span>
+                        <span className="text-xs text-dim">当前全局密钥 {persistedMeta.maskedApiKey || "已配置"}</span>
                       )}
                     </div>
                     <div className="relative">
                       <Input
                         type={showApiKey ? "text" : "password"}
                         className="h-12 rounded-2xl bg-card/90 pr-12"
-                        placeholder={persistedMeta.hasApiKey ? "留空则保留当前 API Key" : "sk-..."}
+                        placeholder={persistedMeta.hasApiKey ? "留空则保留当前全局 API Key" : "sk-..."}
                         value={form.apiKey}
                         onChange={(event) => handleFieldChange("apiKey", event.target.value)}
                       />
@@ -171,7 +171,7 @@ export default function Settings() {
                         {showApiKey ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
                     </div>
-                    <div className="text-xs text-dim">API Key 仅保存在服务端，不会在页面中回显明文。</div>
+                    <div className="text-xs text-dim">API Key 仅在服务端保存，并会同步写入当前系统使用的 .env 配置。</div>
                   </div>
 
                   <div className="space-y-2">
@@ -244,9 +244,9 @@ export default function Settings() {
             <CardContent className="p-5">
               <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-dim/80">说明</div>
               <div className="mt-3 space-y-3 text-sm leading-6 text-dim">
-                <div>1. 这里保存的是你自己的模型连接配置。</div>
-                <div>2. 保存配置不会立即切换正在运行中的训练。</div>
-                <div>3. 在线检测只做轻量连通性检查，不会改动当前运行时。</div>
+                <div>1. 这里修改的是当前系统的全局模型连接配置。</div>
+                <div>2. 保存后，后续请求会使用新的全局配置。</div>
+                <div>3. 在线检测只做轻量连通性检查，不会自动重启服务或容器。</div>
               </div>
             </CardContent>
           </Card>
