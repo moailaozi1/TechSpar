@@ -16,12 +16,8 @@ def build_langchain_llm(llm_config: dict):
     )
 
 
-def get_langchain_llm(user_id: str | None = None, llm_config: dict | None = None):
-    """LangChain ChatModel for runtime flows.
-
-    user_id is accepted for backward compatibility but global settings are the source of truth.
-    """
-    del user_id
+def get_langchain_llm(llm_config: dict | None = None):
+    """LangChain ChatModel for runtime flows."""
     if llm_config is not None:
         return build_langchain_llm(llm_config)
     return build_langchain_llm({

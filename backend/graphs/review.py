@@ -13,7 +13,6 @@ def generate_review(
     weak_points: list[str] | None = None,
     topic: str | None = None,
     eval_history: list[dict] | None = None,
-    user_id: str | None = None,
 ) -> str:
     """Generate a structured review report from interview transcript."""
 

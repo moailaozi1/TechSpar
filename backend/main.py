@@ -127,17 +127,29 @@ def get_llm_settings(user_id: str = Depends(get_current_user)):
 @router.put("/settings/llm")
 def update_llm_settings(req: UpdateLlmSettingsRequest, user_id: str = Depends(get_current_user)):
     del user_id
+    next_api_base = req.api_base.strip()
+    next_model = req.model.strip()
+    next_api_key = req.api_key.strip()
+    current_api_key = (settings.api_key or "").strip()
+    target_api_key = next_api_key if req.replace_api_key else current_api_key
+
     saved = write_global_llm_settings(
-        api_base=req.api_base.strip(),
-        model=req.model.strip(),
-        api_key=req.api_key.strip(),
+        api_base=next_api_base,
+        model=next_model,
+        api_key=next_api_key,
         replace_api_key=req.replace_api_key,
     )
-    settings.api_base = req.api_base.strip()
-    settings.model = req.model.strip()
-    if req.replace_api_key:
-        settings.api_key = req.api_key.strip()
-    reset_llama_llm()
+
+    if (
+        (settings.api_base or "").strip() != next_api_base
+        or (settings.model or "").strip() != next_model
+        or current_api_key != target_api_key
+    ):
+        settings.api_base = next_api_base
+        settings.model = next_model
+        settings.api_key = target_api_key
+        reset_llama_llm()
+
     return {"ok": True, **saved}
 
 
@@ -764,7 +776,6 @@ def _generate_review_background(
             weak_points=weak_points,
             topic=topic_name,
             eval_history=eval_history,
-            user_id=user_id,
         )
 
         extraction = asyncio.run(update_profile_after_interview(

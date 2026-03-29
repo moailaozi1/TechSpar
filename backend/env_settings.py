@@ -5,7 +5,7 @@ from backend.config import settings
 
 
 ENV_KEYS = ("API_BASE", "API_KEY", "MODEL")
-LINE_PATTERN = re.compile(r"^(\s*)([A-Z0-9_]+)\s*=.*$")
+LINE_PATTERN = re.compile(r"^(\s*)([A-Z0-9_]+)\s*=\s*(.*)$")
 
 
 def get_env_file_path() -> Path:
@@ -20,11 +20,33 @@ def mask_api_key(api_key: str) -> str | None:
     return f"{api_key[:2]}****{api_key[-4:]}"
 
 
+def _read_env_llm_values() -> dict:
+    env_path = get_env_file_path()
+    values = {
+        "API_BASE": (settings.api_base or "").strip(),
+        "API_KEY": (settings.api_key or "").strip(),
+        "MODEL": (settings.model or "").strip(),
+    }
+
+    if not env_path.exists():
+        return values
+
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        match = LINE_PATTERN.match(line)
+        if not match:
+            continue
+        key = match.group(2)
+        if key in values:
+            values[key] = match.group(3).strip()
+    return values
+
+
 def read_global_llm_settings() -> dict:
-    api_key = (settings.api_key or "").strip()
+    values = _read_env_llm_values()
+    api_key = values["API_KEY"]
     return {
-        "api_base": (settings.api_base or "").strip(),
-        "model": (settings.model or "").strip(),
+        "api_base": values["API_BASE"],
+        "model": values["MODEL"],
         "has_api_key": bool(api_key),
         "masked_api_key": mask_api_key(api_key),
     }
@@ -61,5 +83,7 @@ def write_global_llm_settings(api_base: str, model: str, api_key: str | None, re
         if key in replacements and key not in seen:
             updated_lines.append(f"{key}={replacements[key]}")
 
-    env_path.write_text("\n".join(updated_lines).rstrip() + "\n", encoding="utf-8")
+    updated_content = "\n".join(updated_lines).rstrip() + "\n"
+    if updated_content != original:
+        env_path.write_text(updated_content, encoding="utf-8")
     return read_global_llm_settings()
